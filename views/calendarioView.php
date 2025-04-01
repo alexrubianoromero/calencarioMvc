@@ -16,6 +16,20 @@ class calendarioView{
             <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
             <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
             <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+            <style>
+                @media (max-width: 768px) {
+                    #calendar {
+                        font-size: 14px;
+                    }
+                    .fc-dayGridMonth-view .fc-day {
+                        min-height: 50px; /* Reduce el tamaño de los días */
+                    }
+                    .fc-toolbar {
+                        flex-direction: column; /* Acomoda los botones arriba */
+                        align-items: center;
+                    }
+                }
+            </style>
         </head>
         <body>
             <h1>Menu Calendario</h1>
@@ -33,6 +47,8 @@ class calendarioView{
             var calendar = new FullCalendar.Calendar(calendarEl, {
                 locale: 'es', // Configurar el idioma en español
                 initialView: 'dayGridMonth',
+                height: 'auto',
+                // initialView: window.innerWidth < 768 ? 'listWeek' : 'dayGridMonth',
                 events: 'eventos.php', // Cargar eventos desde PHP
                 selectable: true,
                 selectMirror:false,
@@ -40,31 +56,34 @@ class calendarioView{
                     left: 'prev,next today', // Botones de navegación
                     center: 'title', // Título del calendario
                     right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek' // Botones de vista
+                },                eventStartEditable: true,
+                eventDrop: function(info) {
+                    let nuevaFecha = info.event.start.toISOString().split('T')[0];
+                    let id = info.event.id;
+                    fetch("actualizar_cita.php", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                        body: `id=${id}&nuevaFecha=${nuevaFecha}`
+                    }).then(() => calendar.refetchEvents());
+
+
                 },
                 dateClick: function(info) {
                     let fecha = info.dateStr;
-
                     mostrarModal();
                     ponerFechaEnFormuEvento(fecha);
+
               
+                },
+                eventClick: function(info) {
+                    alert("Título: " + info.event.title + "\nDescripción: " + info.event.extendedProps.description);
                 }
             });
             calendar.render();
             });
             
             
-                function RecolectarDatosGui(){
-                    NuevoEvento = {
-                        id:$('#txtId').val(),
-                        title:$('#txtTitulo').val(),
-                        start:$('#txtFecha').val()+" "+$('#txtHora').val(),
-                        color:$('#txtColor').val(),
-                        descripcion:$('#txtDescripcion').val(),
-                        email:$('#txtEmail').val(),
-                        txtColor:"#FFFFFF",
-                        end:$('#txtFecha').val()+" "+$('#txtHora').val()
-                    }
-                }   
+              
             
             
             function mostrarModal(){
@@ -73,46 +92,85 @@ class calendarioView{
             function ponerFechaEnFormuEvento(fecha)
             {
                 document.getElementById('fechaPuente').value=fecha;;
-                // $('#fechaPuente').val(fecha);
-                // alert('Clicked on: ' +'El evento es ' + fecha);
             } 
   
         </script> 
         <script>
             $('#btnAgregar').click(function(){
-                RecolectarDatosGui();
-                // $("#calendario").fullCalendar('renderEvent',NuevoEvento);//se quita segun video 16
-                EnviarInformacion('agregar',NuevoEvento);
+                let fecha = document.getElementById('fechaPuente').value;
+                let placa = document.getElementById('txtPlaca').value;
+                let hora = document.getElementById('txtHora').value;
+                let email = document.getElementById('email').value;
+                let servicio = document.getElementById('txtDescripcion').value;
+                //grabar el evento 
+                fetch("guardar_cita.php", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: `fecha=${fecha}&placa=${placa}&hora=${hora}&email=${email}&servicio=${servicio}`
+                }).then(() => calendar.refetchEvents());
+
+                $("#modalEventos").modal("hide");
+                location.reload();
             });
 
-            $('#btnEliminar').click(function(){
-                RecolectarDatosGui();
-                EnviarInformacion('eliminar',NuevoEvento);
-            });
+            $('#btnAgregar').click(function(){
 
-            $('#btnModificar').click(function(){
-                RecolectarDatosGui();
-                EnviarInformacion('modificar',NuevoEvento);
             });
-
-        function EnviarInformacion(accion,objEvento,modal){
-        $.ajax({
-            type:'POST',
-            url:'eventos.php?accion='+accion,
-            data:objEvento,
-            success:function(msg){
-                if(msg){
-                    $("#calendario").fullCalendar('refetchEvents');
-                    if(!modal){
-                        $("#modalEventos").modal('toggle');
-                    }
-                }
-            },
-            error: function(){
-                    alert('Hay un error');
+            function updateEvent(eventData) {
+                var event = calendar.getEventById(eventData.id);
+                alert(event);
+                // if (event) {
+                //     event.setProp('title', eventData.title);
+                //     event.setStart(eventData.start);
+                //     event.setEnd(eventData.end);
+                // }
+                // calendar.rerenderEvents(); // Redibujar eventos sin perder la vista actual
             }
-        })
-    }
+
+
+            // $('#btnEliminar').click(function(){
+            //     RecolectarDatosGui();
+            //     EnviarInformacion('eliminar',NuevoEvento);
+            // });
+
+            // $('#btnModificar').click(function(){
+            //     RecolectarDatosGui();
+            //     EnviarInformacion('modificar',NuevoEvento);
+            // });
+
+        // function EnviarInformacion(accion,objEvento,modal){
+        //     $.ajax({
+        //         type:'POST',
+        //         url:'eventos.php?accion='+accion,
+        //         data:objEvento,
+        //         success:function(msg){
+        //             if(msg){
+        //                 $("#calendario").fullCalendar('refetchEvents');
+        //                 if(!modal){
+        //                     $("#modalEventos").modal('toggle');
+        //                 }
+        //             }
+        //         },
+        //         error: function(){
+        //                 alert('Hay un error');
+        //         }
+        //     })
+        // }
+        function EnviarInformacion()
+        {
+            let fecha = document.getElementById('fechaPuente').value;
+            let placa = document.getElementById('txtPlaca').value;
+            let hora = document.getElementById('txtHora').value;
+            let email = document.getElementById('email').value;
+            let servicio = document.getElementById('txtDescripcion').value;
+            
+            alert('sene envio la informacion '+placa);
+            fetch("guardar_cita.php", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: `fecha=${fecha}&placa=${placa}&hora=${hora}&email=${email}&servicio=${servicio}`
+                }).then(() => 'abc');
+        }    
         </script>   
         <?php
     }
@@ -162,7 +220,7 @@ class calendarioView{
          <div class="container row">
                         <div class="col-lg-4">
                         <label>Placa:</label>
-                        <input type="text" class="form-control" id ="txtTitulo">
+                        <input type="text" class="form-control" id ="txtPlaca">
                         </div>
                         <div class="col-lg-4">
                         <label>Hora:</label>

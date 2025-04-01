@@ -1,7 +1,7 @@
 <?php
 $conexion = new mysqli("localhost", "ctwtvsxj_admin", "ElMejorProgramador***", "ctwtvsxj_enventosNueva");
 
-$sql = "SELECT id, fecha AS start, servicio AS title FROM citas";
+$sql = "SELECT id, fecha AS start, concat(hora,'-',placa,'-',servicio) AS title FROM citas order by fecha, hora asc";
 $resultado = $conexion->query($sql);
 
 $eventos = [];
