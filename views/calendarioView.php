@@ -21,72 +21,112 @@ class calendarioView{
             <h1>Menu Calendario</h1>
 
             <div id='calendar'></div>
-            <?php  $this->exampleModal(); ?>
+            <?php  $this->modalEventos(); ?>
 
         </body>
         </html>
-        <script src="../js/calendario.js"></script>
+        <!-- <script src="../js/calendario.js"></script> -->
         <script>
             
-  document.addEventListener('DOMContentLoaded', function() {
-   var calendarEl = document.getElementById('calendar');
-   var calendar = new FullCalendar.Calendar(calendarEl, {
-     initialView: 'dayGridMonth',
-     selectable: true,
-     selectMirror:false,
-     dateClick: function(info) {
-       mostrarModal();
-       // alert('prueba de enento ');
-       //  document.getElementById('exampleModal').style.display="block";
-       // $('#exampleModal').modal('show');
-         alert('Clicked on: ' + info.dateStr);
-         // alert('Coordinates: ' + info.jsEvent.pageX + ',' + info.jsEvent.pageY);
-         // alert('Current view: ' + info.view.type);
-         // info.dayEl.style.backgroundColor = 'red';
-     }
-   });
-   calendar.render();
-  });
+            document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('calendar');
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                locale: 'es', // Configurar el idioma en español
+                initialView: 'dayGridMonth',
+                events: 'eventos.php', // Cargar eventos desde PHP
+                selectable: true,
+                selectMirror:false,
+                headerToolbar: {
+                    left: 'prev,next today', // Botones de navegación
+                    center: 'title', // Título del calendario
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek' // Botones de vista
+                },
+                dateClick: function(info) {
+                    let fecha = info.dateStr;
+
+                    mostrarModal();
+                    ponerFechaEnFormuEvento(fecha);
+              
+                }
+            });
+            calendar.render();
+            });
+            
+            
+                function RecolectarDatosGui(){
+                    NuevoEvento = {
+                        id:$('#txtId').val(),
+                        title:$('#txtTitulo').val(),
+                        start:$('#txtFecha').val()+" "+$('#txtHora').val(),
+                        color:$('#txtColor').val(),
+                        descripcion:$('#txtDescripcion').val(),
+                        email:$('#txtEmail').val(),
+                        txtColor:"#FFFFFF",
+                        end:$('#txtFecha').val()+" "+$('#txtHora').val()
+                    }
+                }   
+            
+            
+            function mostrarModal(){
+                    $("#modalEventos").modal("show");
+                }
+            function ponerFechaEnFormuEvento(fecha)
+            {
+                document.getElementById('fechaPuente').value=fecha;;
+                // $('#fechaPuente').val(fecha);
+                // alert('Clicked on: ' +'El evento es ' + fecha);
+            } 
   
-  $('#btnAgregar').click(function(){
-         RecolectarDatosGui();
-         // $("#calendario").fullCalendar('renderEvent',NuevoEvento);//se quita segun video 16
-         EnviarInformacion('agregar',NuevoEvento);
-     });
-  
-     function RecolectarDatosGui(){
-          NuevoEvento = {
-             id:$('#txtId').val(),
-             title:$('#txtTitulo').val(),
-             start:$('#txtFecha').val()+" "+$('#txtHora').val(),
-             color:$('#txtColor').val(),
-             descripcion:$('#txtDescripcion').val(),
-             email:$('#txtEmail').val(),
-             txtColor:"#FFFFFF",
-             end:$('#txtFecha').val()+" "+$('#txtHora').val()
-         }
-     }   
-  
-  
-  function mostrarModal(){
-         $("#exampleModal").modal("show");
-     }
-    
-  
-        </script>    
+        </script> 
+        <script>
+            $('#btnAgregar').click(function(){
+                RecolectarDatosGui();
+                // $("#calendario").fullCalendar('renderEvent',NuevoEvento);//se quita segun video 16
+                EnviarInformacion('agregar',NuevoEvento);
+            });
+
+            $('#btnEliminar').click(function(){
+                RecolectarDatosGui();
+                EnviarInformacion('eliminar',NuevoEvento);
+            });
+
+            $('#btnModificar').click(function(){
+                RecolectarDatosGui();
+                EnviarInformacion('modificar',NuevoEvento);
+            });
+
+        function EnviarInformacion(accion,objEvento,modal){
+        $.ajax({
+            type:'POST',
+            url:'eventos.php?accion='+accion,
+            data:objEvento,
+            success:function(msg){
+                if(msg){
+                    $("#calendario").fullCalendar('refetchEvents');
+                    if(!modal){
+                        $("#modalEventos").modal('toggle');
+                    }
+                }
+            },
+            error: function(){
+                    alert('Hay un error');
+            }
+        })
+    }
+        </script>   
         <?php
     }
 
 
-    public function exampleModal()
+    public function modalEventos()
     {
         ?>
          <!--aqui comienza el modal -->
-            <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal fade" id="modalEventos" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="exampleModalLabel">Agendamiento de Citas </h1>
+                    <h1 class="modal-title fs-5" id="exampleModalLabel">Agendamiento de Cita</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -114,10 +154,15 @@ class calendarioView{
     public function mostrarFormuNuevoEvento()
     {
         ?>
+          <div class="col-lg-4">
+                        <label>Fecha:</label>
+                        <input type="text" class="form-control" id ="fechaPuente" onfocus="blur();">
+          </div>
+        <!-- <input type ="text" id="fechaPuente"> -->
          <div class="container row">
                         <div class="col-lg-4">
                         <label>Placa:</label>
-                        <input type="text" class="form-control" id ="placa">
+                        <input type="text" class="form-control" id ="txtTitulo">
                         </div>
                         <div class="col-lg-4">
                         <label>Hora:</label>
@@ -133,10 +178,10 @@ class calendarioView{
                             <label for="">Motivo de la visita:</label>
                             <textarea id="txtDescripcion" name="txtDescripcion" rows="3" class="form-control" ></textarea>
                         </div>    
-                        <div class="form-group col-lg-12" >
+                        <!-- <div class="form-group col-lg-12" >
                             <label for=""> Color : </label>
                         <input type="color"  value="#ff0000" id="txtColor" name="txtColor" class="form-control" style="height:36x;">
-                        </div>  
+                        </div>   -->
 
                     </div>
 
