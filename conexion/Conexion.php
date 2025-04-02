@@ -13,9 +13,9 @@ class Conexion{
         private $db = "ctwtvsxj_enventosNueva";
         // private $conect;
 
-    public function __construct(){
+    // public function __construct(){
    
-    }
+    // }
 
     public function connectMysql(){
             $conexionMysql =mysql_connect($this->host,$this->user,$this->password);
@@ -33,7 +33,12 @@ class Conexion{
 			}
 		return $arreglo_assoc;
 		}
-
+    
+    public function connectMysqli()
+    {
+        $conexionMysqli = new mysqli($this->host,$this->user, $this->password, $this->db);
+        return $conexionMysqli;
+    }
 
 
 }
